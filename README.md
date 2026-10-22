@@ -8,6 +8,8 @@ Source: <https://github.com/ZDreamer2/forge-ts-react-frontend>.
 
 `0.1.0` establishes the npm identity, independent repository and checked release pipeline. It contains only package metadata, this README and the license. It exports no presets, checkers, testing helpers or runtime API, and is not yet a usable frontend foundation. Publication status is authoritative on [npm](https://www.npmjs.com/package/@zdreamer/forge-ts-react-frontend), not implied by this source version.
 
+`0.1.0` was published through the owner's npm bootstrap. `0.1.1` prepares the first GitHub trusted-publishing release; it adds no frontend capabilities. Successful OIDC publication and registry provenance, not the source version or a dry-run, establish trusted publishing.
+
 The intended direction is one versioned package with separate public entry points as capabilities are adopted. Exact contents and exports remain to be agreed; no existing BiCo packages or tools have been extracted, and no application has adopted this package. BiCo host integration and AiAgent-specific behavior remain with their owners. This package is the frontend counterpart of `@zdreamer/forge-ts-service`, not a wrapper around its service-specific conventions.
 
 ## Development
