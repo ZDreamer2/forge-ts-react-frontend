@@ -1,0 +1,24 @@
+{
+  "name": "@zdreamer/forge-ts-react-frontend",
+  "version": "0.1.0",
+  "description": "Opinionated Forge React frontend foundation (infrastructure bootstrap)",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZDreamer2/forge-ts-react-frontend.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [],
+  "exports": {},
+  "engines": {
+    "node": ">=24.18.1 <25"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --test"
+  }
+}

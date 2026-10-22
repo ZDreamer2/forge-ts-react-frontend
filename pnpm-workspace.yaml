@@ -1,0 +1,6 @@
+# Independent installation, including when nested in a host checkout.
+packages: []
+minimumReleaseAge: 10080
+onlyBuiltDependencies: []
+allowBuilds: {}
+storeDir: .cache/pnpm
