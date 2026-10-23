@@ -75,7 +75,7 @@ These are tooling checks, not a complete frontend acceptance gate. The installat
 
 ### BiCo adoption boundary
 
-Local tarball verification retained BiCo's file coverage, program discovery and explicit `vite/client`, `node` and `@testing-library/jest-dom/vitest` typings. Replacing only the shared options with package extensions preserved both effective TypeScript programs and passed the supported `./app pnpm check` gate. The temporary dependency/configuration changes were restored; BiCo has not permanently adopted the package.
+Local tarball verification retained BiCo's file coverage, program discovery and explicit `vite/client`, `node` and `@testing-library/jest-dom/vitest` typings. Replacing only the shared options with package extensions preserved both effective TypeScript programs and passed the supported `./app pnpm check` gate. That temporary checkpoint restored its dependency/configuration changes and did not establish permanent adoption.
 
 BiCo registry adoption uses exact `0.2.0`, with development runtime pins aligned to `24.18.1` and an approved `minimumReleaseAgeExclude` entry for this exact first-party package name. Peers and transitive dependencies retain the seven-day age floor. Runtime pin edits alone do not update an existing container: rebuild it and verify the actual Node version before supported installation/checks. The local-artifact checkpoint above is not evidence of completed registry adoption.
 
