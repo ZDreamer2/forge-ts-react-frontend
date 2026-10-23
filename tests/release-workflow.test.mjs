@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -19,7 +20,13 @@ const cases = [
 	{ name: "push publishes a new version", event: "push", versions: {}, run: true, publish: true },
 	{ name: "missing package push only dry-runs", event: "push", status: 404, run: true, publish: false },
 	{ name: "missing package manual dry-run", event: "workflow_dispatch", status: 404, run: true, publish: false },
-	{ name: "missing package cannot publish via OIDC", event: "workflow_dispatch", status: 404, requested: true, fails: true },
+	{
+		name: "missing package cannot publish via OIDC",
+		event: "workflow_dispatch",
+		status: 404,
+		requested: true,
+		fails: true,
+	},
 	{ name: "registry 403 fails closed", event: "push", status: 403, fails: true },
 	{ name: "registry 429 fails closed", event: "push", status: 429, fails: true },
 	{ name: "registry 500 fails closed", event: "push", status: 500, fails: true },
@@ -90,6 +97,53 @@ for (const scenario of cases) {
 		}
 	});
 }
+
+test("release artifact validation accepts presets and rejects extra files or changed bytes", () => {
+	const blocks = [...workflow.matchAll(/node --input-type=module <<'JS'\n([\s\S]*?)\n {10}JS/g)];
+	const validation = blocks
+		.map((match) => match[1].replace(/^ {10}/gm, ""))
+		.find((script) => script.includes("const directory ="));
+	assert.ok(validation, "Release artifact validation must remain executable");
+	const directory = mkdtempSync(join(tmpdir(), "frontend-release-artifact-"));
+	try {
+		const artifact = join(directory, "npm-package");
+		mkdirSync(artifact);
+		const filename = `zdreamer-forge-ts-react-frontend-${manifest.version}.tgz`;
+		const bytes = Buffer.from("checked artifact");
+		writeFileSync(join(artifact, filename), bytes);
+		const metadata = {
+			name: manifest.name,
+			version: manifest.version,
+			filename,
+			files: ["LICENSE", "README.md", "package.json", "presets/biome-preset.json", "presets/tsconfig.json"].map(
+				(path) => ({ path }),
+			),
+			integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
+		};
+		function validate(succeeds) {
+			writeFileSync(join(artifact, "pack.json"), JSON.stringify([metadata]));
+			const result = spawnSync(process.execPath, ["--input-type=module", "-e", validation], {
+				env: { RUNNER_TEMP: directory, EXPECTED_VERSION: manifest.version },
+				encoding: "utf8",
+			});
+			assert.ifError(result.error);
+			assert.equal(result.signal, null);
+			if (succeeds) assert.equal(result.status, 0, result.stderr);
+			else assert.notEqual(result.status, 0);
+		}
+		validate(true);
+		metadata.files.push({ path: "tests/private-fixture.ts" });
+		validate(false);
+		metadata.files.pop();
+		const preset = metadata.files.pop();
+		validate(false);
+		metadata.files.push(preset);
+		writeFileSync(join(artifact, filename), "modified artifact");
+		validate(false);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
+});
 
 test("workflow wires automatic releases through verification and preserves manual dry-runs", () => {
 	assert.ok(workflow.includes("push:\n    branches: [main]"));
