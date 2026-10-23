@@ -17,7 +17,19 @@ A dry-run proves artifact preparation, not npm ownership, publisher configuratio
 
 The current source artifact allowlist is `LICENSE`, `README.md`, `package.json`, `presets/biome-preset.json` and `presets/tsconfig.json`. Package tests and release artifact validation enforce the same list. `0.2.0` is the first version containing presets and required tool peers; `0.1.x` was metadata-only. Check registry availability rather than inferring publication from the manifest version. The first-publication instructions below describe the historical metadata-only bootstrap, not the current artifact.
 
-## First publication: owner-operated
+## Routine release and adoption
+
+1. Obtain owner approval for the next unused version and publication. Review capability changes where warranted; release bookkeeping alone does not need another review round.
+2. Run the package's `check` command on the release source after explicit dependency setup. It already packs and tests an installed artifact; do not repeat that exercise manually.
+3. Push the approved version to `main`. CI runs the same gate in its own environment; Publish validates and publishes the checked CI artifact. Observe those results rather than reconstructing their internal checks by hand.
+4. Confirm registry availability, compare registry integrity with the checked CI artifact, and verify a fresh exact-version registry consumer and its signatures/provenance. The local-artifact test does not cover registry delivery. Inspect raw attestation internals when publishing infrastructure changes or a mismatch needs investigation, not as a routine parallel checklist.
+5. For the selected adopting installation, exact-pin the release, install with its normal frozen/policy controls, then run its affected aggregate gate once. Run additional build/browser verification where the change requires it; do not rerun unrelated consumers automatically.
+
+Reuse passing evidence while its checked inputs, coverage and execution environment remain unchanged. Prose-only follow-ups do not require repeating unaffected consumer suites; changes to documented behavior or verification contracts can require new checks. Record the version, release/CI links, adoption result and unresolved limitations concisely. Never remove or overwrite a published version to fix a release.
+
+The bootstrap and publisher-configuration sections below are setup/recovery references, not steps to repeat for every release. This repository's bootstrap and trusted publishing are already established.
+
+## First publication: owner-operated (historical bootstrap)
 
 The initial version is `0.1.0`, an infrastructure-only bootstrap with no public API. Confirm that this limited release is still intended before publishing.
 
@@ -60,6 +72,4 @@ On npmjs.com, open `@zdreamer/forge-ts-react-frontend` -> Settings -> Trusted Pu
 
 The filename is `publish.yml`, not `.github/workflows/publish.yml`. Use GitHub-hosted runners, no npm publishing token. Recheck [npm's trusted-publishing requirements](https://docs.npmjs.com/trusted-publishers/) when performing setup. Saving settings does not validate the publisher; an actual authorized release must prove OIDC and provenance.
 
-## Subsequent releases
-
-Review and verify the next unused manifest version before pushing to `main`; that push authorizes automatic publication after checks. If verification fails, fix it and retry the same unpublished version. After publication, check the workflow result, registry integrity/signatures/provenance and a fresh exact-version consumer installation. Never remove or overwrite a published version to fix a release. Version changes and publication remain explicit owner decisions.
+If verification of an authorized new version fails before publication, fix it and retry that same unpublished version. Version changes and publication remain explicit owner decisions.

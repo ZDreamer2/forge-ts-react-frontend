@@ -86,8 +86,11 @@ Use the exact Node version in `.nvmrc`; Corepack selects `pnpm@11.15.1` from `pa
 ```sh
 corepack pnpm install --frozen-lockfile
 corepack pnpm --config.verify-deps-before-run=error check
-npm pack --ignore-scripts
 ```
+
+Installation is explicit setup; after setup, `check` is the single package acceptance command. It already packs and exercises an installed artifact, so no separate manual pack/install test is needed for ordinary verification. Run `npm pack --ignore-scripts` separately only when you need a tarball to deliver or inspect. Checks do not install dependencies, publish or deploy.
+
+Forge is the workspace dispatcher, not another acceptance implementation: its codebase check entry should invoke this package's existing gate from this independent installation using its pinned runtime. Consumer installations invoke their own aggregate gates against the installed presets; this package's passing gate does not establish consumer adoption. Build/browser checks outside an aggregate gate remain explicit task-specific verification.
 
 This checkout is an independent installation with its own lockfile, a seven-day third-party release-age floor and no allowed dependency lifecycle scripts. The gate checks package sources with the shared Biome preset; tests use Node's built-in runner. The package test packs the publication artifact, checks its exact allowlist and SHA-512, installs it into an isolated npm consumer and exercises both exports with passing React/browser code and deliberate lint/type errors. It verifies consumer coverage, ambient type isolation and effective compiler options. It needs registry/network access for exact tool peers and fixture types; it does not use sibling-source imports, global tools or publishing credentials. Tests and invalid fixtures are not published.
 
