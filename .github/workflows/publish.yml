@@ -130,7 +130,7 @@ jobs:
           assert.equal(packed.name, '@zdreamer/forge-ts-react-frontend');
           assert.equal(packed.version, process.env.EXPECTED_VERSION);
           assert.equal(packed.filename, `zdreamer-forge-ts-react-frontend-${packed.version}.tgz`);
-          assert.deepEqual(packed.files.map(file => file.path).sort(), ['LICENSE', 'README.md', 'package.json', 'presets/biome-preset.json', 'presets/tsconfig.json']);
+          assert.deepEqual(packed.files.map(file => file.path).sort(), ['LICENSE', 'README.md', 'dist/structure.d.ts', 'dist/structure.js', 'package.json', 'presets/biome-preset.json', 'presets/tsconfig.json', 'src/structure.ts']);
           assert.deepEqual(readdirSync(directory).filter(name => name.endsWith('.tgz')), [packed.filename]);
           const integrity = 'sha512-' + createHash('sha512').update(readFileSync(join(directory, packed.filename))).digest('base64');
           assert.equal(integrity, packed.integrity);

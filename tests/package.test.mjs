@@ -9,9 +9,18 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const publicFiles = ["LICENSE", "README.md", "package.json", "presets/biome-preset.json", "presets/tsconfig.json"];
+const publicFiles = [
+	"LICENSE",
+	"README.md",
+	"dist/structure.d.ts",
+	"dist/structure.js",
+	"package.json",
+	"presets/biome-preset.json",
+	"presets/tsconfig.json",
+	"src/structure.ts",
+];
 
-test("packed presets work in an independent React/browser consumer", { timeout: 240_000 }, async (t) => {
+test("packed presets and structural enforcement work in an independent consumer", { timeout: 240_000 }, async (t) => {
 	const directory = mkdtempSync(join(tmpdir(), "forge-frontend-package-"));
 	const consumer = join(directory, "consumer");
 	const env = { ...process.env };
@@ -80,6 +89,7 @@ test("packed presets work in an independent React/browser consumer", { timeout: 
 		assert.deepEqual(installed.exports, {
 			"./biome": "./presets/biome-preset.json",
 			"./tsconfig": "./presets/tsconfig.json",
+			"./structure": { types: "./dist/structure.d.ts", default: "./dist/structure.js" },
 		});
 		assert.deepEqual(installed.peerDependencies, { "@biomejs/biome": "2.5.4", typescript: "7.0.2" });
 		assert.equal(installed.dependencies, undefined);
@@ -167,6 +177,62 @@ export enum Status { Ready }
 			assert.match(output, /string \| undefined/);
 			assert.match(output, /erasableSyntaxOnly/);
 			rmSync(join(consumer, "browser/Bad.ts"));
+		});
+
+		await t.test("installed structural engine enforces standalone topology and coverage", () => {
+			put("application/main.tsx", "export {};\n");
+			put("application/App.tsx", 'export { Widget } from "./Components/Widget/Widget";\n');
+			put("application/Components/Widget/Widget.tsx", "export const Widget = 1;\n");
+			put("application/Components/Widget/Internal/value.ts", "export const value = 1;\n");
+			put("application/Components/Widget/Tests/Widget.test.ts", 'import "vitest";\n');
+			put(
+				"verify-structure.mjs",
+				`
+import assert from "node:assert/strict";
+import { writeFileSync, mkdirSync } from "node:fs";
+import { createStructureChecker, compareFileCoverage, compareImportGraph } from "@zdreamer/forge-ts-react-frontend/structure";
+const checker = createStructureChecker({ root: process.cwd(), scopes: [{ root: "application", level: "app", entry: "main.tsx" }], testOnlyImports: ["@host/testing"] });
+assert.deepEqual(checker.checkStructure(), []);
+const scanned = checker.scanImports();
+assert.equal(scanned.size, 5);
+const graph = [...scanned].map(([source, imports]) => ({source, dependencies: [...new Set(imports)].map(module => ({module}))}));
+assert.deepEqual(compareImportGraph(scanned, graph), []);
+assert.ok(compareImportGraph(scanned, graph.slice(1)).length);
+assert.ok(compareFileCoverage("test", ["one.test.ts"], []).length);
+assert.ok(compareFileCoverage("source", [], []).length);
+writeFileSync("application/App.tsx", 'import "@host/testing"; import "./Components/Widget/Internal/value";');
+const rules = checker.checkStructure().map(f => f.rule);
+assert.ok(rules.includes("test-only-import"));
+assert.ok(rules.includes("import-visibility"));
+mkdirSync("application/Components/Widget/Internal/Tests");
+writeFileSync("application/Components/Widget/Internal/Tests/Wrong.test.ts", 'import "vitest";');
+assert.equal(checker.classifySource("application/Components/Widget/Internal/Tests/Wrong.test.ts"), "production");
+assert.ok(checker.checkStructure().some(f => f.rule === "test-placement"));
+assert.throws(() => createStructureChecker({root:process.cwd(), scopes:[]}).checkStructure(), /no structure scopes/);
+`,
+			);
+			run(process.execPath, ["verify-structure.mjs"]);
+			put(
+				"tooling.ts",
+				`import { createStructureChecker, type StructureCheckerOptions } from "@zdreamer/forge-ts-react-frontend/structure";
+const options: StructureCheckerOptions = { root: ".", scopes: [{ root: "application", level: "app", entry: "main.tsx" }] };
+const findings = createStructureChecker(options).checkStructure();
+const severity: "error" | "recommendation" | undefined = findings[0]?.severity;
+// @ts-expect-error shared policy has no arbitrary rule-disable option
+createStructureChecker({ ...options, disableRules: ["test-only-import"] });
+// @ts-expect-error app entry identity is required
+createStructureChecker({ root: ".", scopes: [{ root: "application", level: "app" }] });
+void severity;
+`,
+			);
+			put(
+				"tooling.tsconfig.json",
+				JSON.stringify({
+					compilerOptions: { target: "ES2023", module: "NodeNext", strict: true, noEmit: true, types: ["node"] },
+					include: ["tooling.ts"],
+				}),
+			);
+			tool("tsc", ["-p", "tooling.tsconfig.json"]);
 		});
 
 		await t.test("ambient Node types require an explicit consumer binding", () => {

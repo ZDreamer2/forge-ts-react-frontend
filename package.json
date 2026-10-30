@@ -1,7 +1,7 @@
 {
 	"name": "@zdreamer/forge-ts-react-frontend",
-	"version": "0.2.0",
-	"description": "Opinionated Biome and browser TypeScript presets for Forge React frontends",
+	"version": "0.3.0",
+	"description": "Opinionated presets and structural enforcement for Forge React frontends",
 	"license": "MIT",
 	"type": "module",
 	"repository": {
@@ -12,23 +12,34 @@
 		"access": "public"
 	},
 	"files": [
-		"presets/"
+		"presets/",
+		"dist/",
+		"src/"
 	],
 	"exports": {
 		"./biome": "./presets/biome-preset.json",
-		"./tsconfig": "./presets/tsconfig.json"
+		"./tsconfig": "./presets/tsconfig.json",
+		"./structure": {
+			"types": "./dist/structure.d.ts",
+			"default": "./dist/structure.js"
+		}
 	},
 	"engines": {
 		"node": ">=24.18.1 <25"
 	},
 	"packageManager": "pnpm@11.15.1",
 	"scripts": {
-		"lint": "biome check --config-path=presets/biome-preset.json package.json presets tests",
+		"build": "tsc --ignoreConfig src/structure.ts --target ES2023 --module NodeNext --moduleResolution NodeNext --declaration --types node --strict --exactOptionalPropertyTypes --noUncheckedIndexedAccess --skipLibCheck --outDir dist",
+		"lint": "biome check --config-path=presets/biome-preset.json package.json presets src tests",
 		"test": "node --test",
-		"check": "biome check --config-path=presets/biome-preset.json package.json presets tests && node --test"
+		"test:structure": "node --test tests/structure.test.mjs",
+		"check": "node --run build && biome check --config-path=presets/biome-preset.json package.json presets src tests && node --test"
 	},
 	"peerDependencies": {
 		"@biomejs/biome": "2.5.4",
 		"typescript": "7.0.2"
+	},
+	"devDependencies": {
+		"@types/node": "24.13.3"
 	}
 }

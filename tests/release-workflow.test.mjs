@@ -98,7 +98,7 @@ for (const scenario of cases) {
 	});
 }
 
-test("release artifact validation accepts presets and rejects extra files or changed bytes", () => {
+test("release artifact validation accepts the public engine and presets and rejects changed contents", () => {
 	const blocks = [...workflow.matchAll(/node --input-type=module <<'JS'\n([\s\S]*?)\n {10}JS/g)];
 	const validation = blocks
 		.map((match) => match[1].replace(/^ {10}/gm, ""))
@@ -115,9 +115,16 @@ test("release artifact validation accepts presets and rejects extra files or cha
 			name: manifest.name,
 			version: manifest.version,
 			filename,
-			files: ["LICENSE", "README.md", "package.json", "presets/biome-preset.json", "presets/tsconfig.json"].map(
-				(path) => ({ path }),
-			),
+			files: [
+				"LICENSE",
+				"README.md",
+				"dist/structure.d.ts",
+				"dist/structure.js",
+				"package.json",
+				"presets/biome-preset.json",
+				"presets/tsconfig.json",
+				"src/structure.ts",
+			].map((path) => ({ path })),
 			integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
 		};
 		function validate(succeeds) {

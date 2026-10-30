@@ -1,35 +1,32 @@
+---
+edit-only-context: docs/README.meta.md
+---
+
 # @zdreamer/forge-ts-react-frontend
 
-One opinionated frontend foundation for Forge's React CodebaseType, shared by standalone applications and embedded frontends. MIT licensed.
+Opinionated development tooling for standalone and embedded React frontends. MIT licensed.
 
 Source: <https://github.com/ZDreamer2/forge-ts-react-frontend>.
 
-## Contents and release status
+| Export | Purpose |
+|---|---|
+| `/biome` | Formatting and recommended lint rules |
+| `/tsconfig` | Strict browser/React TypeScript configuration |
+| `/structure` | Node-only structural policy and coverage checks |
 
-This source adds two development-tooling exports:
-
-- `@zdreamer/forge-ts-react-frontend/biome` — formatting and recommended lint rules.
-- `@zdreamer/forge-ts-react-frontend/tsconfig` — strict browser/React TypeScript checking.
-
-There is no runtime API, build step, architecture checker, test harness, Vite configuration or application generator in this slice. The presets do not enforce the whole frontend guidance contract. BiCo host integration and application-specific behavior remain with their owners; this is not a wrapper around the service-specific `@zdreamer/forge-ts-service` conventions.
-
-`0.2.0` introduces these presets and required exact tool peers; `0.1.0` and `0.1.1` were infrastructure-only releases. Consumers upgrading from `0.1.x` now install Biome and TypeScript alongside the package, but still supply their own file coverage and host integration. Publication status is authoritative on [npm](https://www.npmjs.com/package/@zdreamer/forge-ts-react-frontend), not implied by the source version.
+Version `0.3.0` adds `/structure`; `0.2.0` supplies the presets only. This package supplies no React runtime, test harness or application generator.
 
 ## Installation
 
-Use Node `>=24.18.1 <25`. The package declares exact required tool peers: Biome `2.5.4` and TypeScript `7.0.2`, matching the existing BiCo baseline without a tool upgrade. React and its types remain application dependencies; the presets do not install a React runtime. npm/pnpm auto-install required peers by default; with peer auto-installation disabled, install these exact tool versions explicitly.
-
-For registry adoption after the release is available:
+Use Node `>=24.18.1 <25`, Biome `2.5.4` and TypeScript `7.0.2`. Both tools are exact required peers; install them explicitly if peer auto-installation is disabled. React and its types remain application dependencies.
 
 ```sh
-npm install --save-dev --save-exact @zdreamer/forge-ts-react-frontend@0.2.0
+npm install --save-dev --save-exact @zdreamer/forge-ts-react-frontend@0.3.0
 ```
 
-For local artifact verification, run `npm pack --ignore-scripts` in this checkout, then install the resulting `zdreamer-forge-ts-react-frontend-0.2.0.tgz` in a separate consumer using its actual absolute path. Do not use `npm link` or sibling-source imports as packaging evidence.
+Retain your installation's lockfile, release-age floor and lifecycle-script policy. Neither peer requires a dependency lifecycle script.
 
-A local tarball is verification input, not a permanent cross-repository dependency or evidence of registry adoption. Keep the consumer's normal lockfile, release-age floor and lifecycle-script policy; migrate to an approved exact registry version when released. Neither peer needs an allowed dependency lifecycle script.
-
-## Consumer configuration
+## Presets
 
 `biome.json`:
 
@@ -42,7 +39,7 @@ A local tarball is verification input, not a permanent cross-repository dependen
 }
 ```
 
-The preset owns tab indentation, 120-column formatting and recommended lint rules. Each installation owns file coverage and exclusions; use paths that actually exist in your application. The preset has no BiCo globs, service environment restrictions or execution-root assumptions.
+The preset selects tab indentation, 120-column formatting and recommended lint rules. The installation supplies actual source roots and exclusions.
 
 `tsconfig.json`:
 
@@ -56,44 +53,52 @@ The preset owns tab indentation, 120-column formatting and recommended lint rule
 }
 ```
 
-The preset supplies ES2023 and browser DOM libraries, bundler resolution, preserved modules, automatic React JSX, strict checking, exact optional properties, checked indexed access, no switch fallthrough, isolated modules, verbatim module syntax, erasable syntax and no emit. Explicit TypeScript import extensions are supported. Vite or another browser bundler owns asset emission; this is not a Node/service TypeScript configuration.
+The preset selects strict ES2023/browser checking, bundler resolution, React JSX, erasable syntax and no emit. Your bundler owns asset emission. Roots, aliases and ambient type packages are installation-owned: the default `types: []` prevents installed Node/test globals from becoming browser APIs. Add ambient types only to the programs needing them. Keep one TanStack Router registration per TypeScript program.
 
-There are no default roots, includes, aliases or ambient type packages. `types: []` prevents installed Node/test ambient globals from silently becoming browser APIs. Imports still resolve their own types, including JSX types from React. Add `vite/client`, Node configuration-file types or test globals only to the programs that need them. A shared BiCo program can retain its existing explicit type list; splitting that program is not required by this extraction. Keep one TanStack Router registration per TypeScript program.
+## Structural enforcement
 
-Example scripts for a consumer with a single program and its own test/build commands:
+Use `/structure` in Node tooling, not browser code. It checks the shared App/Component/Lib/category/group grammar, relative-import visibility, test placement and test-only imports, committed route-tree currency, and ownership/empty-category recommendations.
 
-```json
-{
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "lint": "biome check ."
-  }
-}
+```ts
+import { createStructureChecker } from "@zdreamer/forge-ts-react-frontend/structure";
+
+const checker = createStructureChecker({
+  root: process.cwd(),
+  scopes: [{ root: "ui/src", level: "app", entry: "main.tsx" }],
+  testOnlyImports: ["@project/testing"],
+});
+
+const findings = checker.checkStructure();
+const scanned = checker.scanImports();
 ```
 
-These are tooling checks, not a complete frontend acceptance gate. The installation also owns structural enforcement, actual test discovery/execution, build checks and host/browser verification. Existing BiCo discovery and aggregate commands remain in place; do not replace them with this single-program example.
+The installation supplies topology rather than rule overrides:
 
-### BiCo adoption boundary
+- `scopes`: app roots with named entries, or package roots with `level: "package"`. Roots are canonical repository-relative source directories, such as `ui/src`; repository-root scopes (`.`) and dot/parent segments are unsupported. The engine walks each scope, including assets and empty directories. Missing, empty, duplicate and overlapping scopes fail visibly.
+- Apps require their entry and `App.tsx`. `allowedRootFiles` permits additional exact root filenames; `additionalFileCategories` permits app-root file categories with host-owned semantics. Neither weakens shared encapsulation.
+- `testSupportPackages` binds local package scopes to import specifiers and grants their implementations test-support privileges. `testOnlyImports` restricts external support imports without granting local privileges. `Lib/Testing/` recognition and test-runtime restrictions remain shared policy.
+- `routeTree` names the committed file under `Routes/`, defaulting to `routeTree.gen.ts`.
 
-Local tarball verification retained BiCo's file coverage, program discovery and explicit `vite/client`, `node` and `@testing-library/jest-dom/vitest` typings. Replacing only the shared options with package extensions preserved both effective TypeScript programs and passed the supported `./app pnpm check` gate. That temporary checkpoint restored its dependency/configuration changes and did not establish permanent adoption.
+The factory also exposes `classifySource(path)`. Findings carry `rule`, `severity`, `path` and `message`; fail on errors, not recommendations. Configuration and filesystem failures can throw and should be reported as execution failures.
 
-BiCo registry adoption uses exact `0.2.0`, with development runtime pins aligned to `24.18.1` and an approved `minimumReleaseAgeExclude` entry for this exact first-party package name. Peers and transitive dependencies retain the seven-day age floor. Runtime pin edits alone do not update an existing container: rebuild it and verify the actual Node version before supported installation/checks. The local-artifact checkpoint above is not evidence of completed registry adoption.
+Two exports validate coverage against independent inputs:
 
-## Development and verification
+- `compareFileCoverage("source" | "test", discovered, collected)` rejects empty discovery, missing/extra files and duplicates.
+- `compareImportGraph(scanned, modules)` compares scanned static specifiers with an independently parsed graph: `{ source, dependencies: [{ module }] }[]`. Normalize parser-specific specifiers before comparison. Literal dynamic imports and re-exports are scanned; computed imports/globs are not.
 
-Use the exact Node version in `.nvmrc`; Corepack selects `pnpm@11.15.1` from `package.json`.
+The installation supplies discovery, parser/resolver integration and the aggregate gate. Resolved graph/package boundaries and host-specific restrictions need separate checks; this export does not enforce them. Combine the checks with typing, linting, tests and build/host verification. Semantic cohesion, export kinds and mount-only behavior require review or other checks; the engine does not enforce the entire frontend contract.
+
+## Package development
+
+Use the exact Node version in `.nvmrc`; Corepack selects the pinned pnpm version.
 
 ```sh
 corepack pnpm install --frozen-lockfile
 corepack pnpm --config.verify-deps-before-run=error check
 ```
 
-Installation is explicit setup; after setup, `check` is the single package acceptance command. It already packs and exercises an installed artifact, so no separate manual pack/install test is needed for ordinary verification. Run `npm pack --ignore-scripts` separately only when you need a tarball to deliver or inspect. Checks do not install dependencies, publish or deploy.
+`check` builds the engine, lints sources and runs tests, including an isolated packed consumer. It needs registry access for that consumer's dependencies. It does not install development dependencies, publish or deploy. Package acceptance does not replace an adopting project's own gate.
 
-Forge is the workspace dispatcher, not another acceptance implementation: its codebase check entry should invoke this package's existing gate from this independent installation using its pinned runtime. Consumer installations invoke their own aggregate gates against the installed presets; this package's passing gate does not establish consumer adoption. Build/browser checks outside an aggregate gate remain explicit task-specific verification.
+Rebuild committed `dist/` files after source edits. For manual artifact verification, run `npm pack --ignore-scripts` after building and install the tarball in an independent consumer. A tarball is verification input, not a permanent cross-repository dependency or registry-adoption evidence.
 
-This checkout is an independent installation with its own lockfile, a seven-day third-party release-age floor and no allowed dependency lifecycle scripts. The gate checks package sources with the shared Biome preset; tests use Node's built-in runner. The package test packs the publication artifact, checks its exact allowlist and SHA-512, installs it into an isolated npm consumer and exercises both exports with passing React/browser code and deliberate lint/type errors. It verifies consumer coverage, ambient type isolation and effective compiler options. It needs registry/network access for exact tool peers and fixture types; it does not use sibling-source imports, global tools or publishing credentials. Tests and invalid fixtures are not published.
-
-CI runs the same checks and uploads an inspectable tarball with `pack.json`. After owner bootstrap and trusted-publisher setup, pushes to `main` automatically publish unpublished manifest versions through the verification gate. Versions are never bumped automatically; the unchanged already-published version skips automatic release. Do not push a version bump unless its release is authorized.
-
-See [release operations](docs/releasing.md) for artifact validation and publication procedures. No publishing credentials belong in this repository or its GitHub secrets.
+CI uses the same gate. Pushing an unpublished manifest version to `main` can publish automatically; do not bump or push a release version without approval. See [release operations](docs/releasing.md).

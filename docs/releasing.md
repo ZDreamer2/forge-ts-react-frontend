@@ -15,7 +15,7 @@ Verification calls the same reusable CI workflow with the expected version. The 
 
 A dry-run proves artifact preparation, not npm ownership, publisher configuration or provenance. Those require an actual publication and registry verification.
 
-The current source artifact allowlist is `LICENSE`, `README.md`, `package.json`, `presets/biome-preset.json` and `presets/tsconfig.json`. Package tests and release artifact validation enforce the same list. `0.2.0` is the first version containing presets and required tool peers; `0.1.x` was metadata-only. Check registry availability rather than inferring publication from the manifest version. The first-publication instructions below describe the historical metadata-only bootstrap, not the current artifact.
+Package tests and release artifact validation enforce the public artifact allowlist, including emitted engine JavaScript/declarations and presets. Check registry availability rather than inferring publication from the manifest version. The first-publication instructions below describe the historical metadata-only bootstrap, not the current artifact.
 
 ## Routine release and adoption
 
