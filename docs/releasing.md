@@ -15,11 +15,13 @@ Verification calls the same reusable CI workflow with the expected version. The 
 
 A dry-run proves artifact preparation, not npm ownership, publisher configuration or provenance. Those require an actual publication and registry verification.
 
-Package tests and release artifact validation enforce the public artifact allowlist, including emitted engine JavaScript/declarations and presets. Check registry availability rather than inferring publication from the manifest version. The first-publication instructions below describe the historical metadata-only bootstrap, not the current artifact.
+Package tests and release artifact validation enforce the public artifact allowlist, including emitted structure/testing JavaScript and declarations, their sources and presets. Check registry availability rather than inferring publication from the manifest version. The first-publication instructions below describe the historical metadata-only bootstrap, not the current artifact.
 
 ## Routine release and adoption
 
-1. Obtain owner approval for the next unused version and publication. Review capability changes where warranted; release bookkeeping alone does not need another review round.
+Exact pins of first-party libraries ensure reproducibility and may change during normal development. Necessary library releases and consuming pin/lockfile updates are ordinary work within an authorized capability, not an exceptional adoption blocker. Existing task authorization for that delivery is sufficient; do not ask again solely because a first-party version was pinned. Retain the normal owner acceptance before commits/publication. Publishing makes a version available for registry consumption; production deployment is a separate action requiring its own authorization. Consumers retain their third-party age, exact-pin and lifecycle-script controls.
+
+1. Confirm that task authorization covers the release and select the next unused version; obtain owner approval if release authority is absent. Review capability changes where warranted; release bookkeeping alone does not need another review round.
 2. Run the package's `check` command on the release source after explicit dependency setup. It already packs and tests an installed artifact; do not repeat that exercise manually.
 3. Push the approved version to `main`. CI runs the same gate in its own environment; Publish validates and publishes the checked CI artifact. Observe those results rather than reconstructing their internal checks by hand.
 4. Confirm registry availability, compare registry integrity with the checked CI artifact, and verify a fresh exact-version registry consumer and its signatures/provenance. The local-artifact test does not cover registry delivery. Inspect raw attestation internals when publishing infrastructure changes or a mismatch needs investigation, not as a routine parallel checklist.
@@ -72,4 +74,4 @@ On npmjs.com, open `@zdreamer/forge-ts-react-frontend` -> Settings -> Trusted Pu
 
 The filename is `publish.yml`, not `.github/workflows/publish.yml`. Use GitHub-hosted runners, no npm publishing token. Recheck [npm's trusted-publishing requirements](https://docs.npmjs.com/trusted-publishers/) when performing setup. Saving settings does not validate the publisher; an actual authorized release must prove OIDC and provenance.
 
-If verification of an authorized new version fails before publication, fix it and retry that same unpublished version. Version changes and publication remain explicit owner decisions.
+If verification of an authorized new version fails before publication, fix it and retry that same unpublished version. Keep version changes and publication within the task's release authority and normal owner acceptance.

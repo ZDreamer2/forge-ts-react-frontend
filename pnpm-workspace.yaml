@@ -2,5 +2,7 @@
 packages: []
 minimumReleaseAge: 10080
 onlyBuiltDependencies: []
-allowBuilds: {}
+# Node interception does not need the browser-worker postinstall.
+allowBuilds:
+  msw: false
 storeDir: .cache/pnpm

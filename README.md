@@ -13,18 +13,20 @@ Source: <https://github.com/ZDreamer2/forge-ts-react-frontend>.
 | `/biome` | Formatting and recommended lint rules |
 | `/tsconfig` | Strict browser/React TypeScript configuration |
 | `/structure` | Node-only structural policy and coverage checks |
+| `/testing` | Vitest lifecycle ownership for deferred work, HTTP and QueryClients |
+| `/testing/http` | Standalone Node HTTP interception without Vitest or Query Core |
 
-Version `0.3.0` adds `/structure`; `0.2.0` supplies the presets only. This package supplies no React runtime, test harness or application generator.
+Version `0.4.0` adds the testing exports. Confirm registry availability before installing a source manifest version. This package supplies development tooling; React rendering, application providers and fixtures belong to consumers.
 
 ## Installation
 
 Use Node `>=24.18.1 <25`, Biome `2.5.4` and TypeScript `7.0.2`. Both tools are exact required peers; install them explicitly if peer auto-installation is disabled. React and its types remain application dependencies.
 
 ```sh
-npm install --save-dev --save-exact @zdreamer/forge-ts-react-frontend@0.3.0
+npm install --save-dev --save-exact @zdreamer/forge-ts-react-frontend@0.4.0
 ```
 
-Retain your installation's lockfile, release-age floor and lifecycle-script policy. Neither peer requires a dependency lifecycle script.
+Retain your installation's lockfile, release-age floor and lifecycle-script policy. Neither peer requires a dependency lifecycle script. First-party exact pins may advance during normal development; [release and adoption guidance](docs/releasing.md#routine-release-and-adoption) owns that policy and the registry-consumption sequence.
 
 ## Presets
 
@@ -88,6 +90,49 @@ Two exports validate coverage against independent inputs:
 
 The installation supplies discovery, parser/resolver integration and the aggregate gate. Resolved graph/package boundaries and host-specific restrictions need separate checks; this export does not enforce them. Combine the checks with typing, linting, tests and build/host verification. Semantic cohesion, export kinds and mount-only behavior require review or other checks; the engine does not enforce the entire frontend contract.
 
+## Testing
+
+The testing exports are ESM tooling for tests in Node 24. Importing either export starts no HTTP interception. `/testing/http` needs neither Vitest nor Query Core; callers create a scenario explicitly and await its `finish()` in teardown or `finally`.
+
+`/testing` registers real Vitest `beforeEach`/`afterEach` hooks. Harness consumers explicitly install its optional peers, Vitest and `@tanstack/query-core`; the implementation is tested with `4.1.11` and `5.102.8`. Optional peers let preset/structure consumers install without a test runtime. Keep one compatible Query Core runtime with your React Query installation. MSW `2.15.0` is the implementation dependency; consumers importing its handler builders declare MSW directly. Node interception needs no browser-worker postinstall.
+
+An installation using the tested harness versions can use:
+
+```sh
+npm install --save-dev --save-exact @zdreamer/forge-ts-react-frontend@0.4.0 vitest@4.1.11 @tanstack/query-core@5.102.8 msw@2.15.0
+```
+
+Declare one lifecycle at module scope; resources are fresh for each sequential test:
+
+```ts
+import { createTestSuiteLifecycle } from "@zdreamer/forge-ts-react-frontend/testing";
+import { http } from "msw";
+import { expect, it } from "vitest";
+
+const suite = createTestSuiteLifecycle();
+
+it("observes the acknowledged response", async () => {
+  const network = suite.createHttpScenario();
+  const response = network.deferResponse();
+  network.use(http.get("https://example.test/title", ({ request }) => response.handle(request)));
+
+  const title = fetch("https://example.test/title").then((result) => result.text());
+  response.release(new Response("Arrived"));
+
+  expect(await title).toBe("Arrived");
+});
+```
+
+Unmatched ordinary and asset requests fail closed, and handler failures remain teardown diagnostics even if application code catches the request error. Later `network.use(...)` handlers override initial handlers. Controlled responses cancel on abort or teardown; each handles one request. Overlapping HTTP owners in one environment are rejected. Sequential tests inside isolated Vitest file workers can still run in parallel across files; do not use `it.concurrent` for lifecycle-owning tests.
+
+Acquire promise controls with `suite.defer<T>({ label, unfinished })`, supplying a required fallback outcome such as `{ type: "resolve", value }` or `{ type: "reject", reason }`. Explicit completion is first-call-wins, with immediate rejection observation. Acquire real clients with `suite.createQueryClient(config?)`; configuration passes through unchanged. Your provider uses that client. DOM cases choose jsdom and install their React, React DOM and Testing Library dependencies.
+
+For React, use `beforeCancel: [() => cleanup()]` to unmount consumers and `runCleanup: (finish) => act(finish)` to wrap disposal. Release responses inside `act` when they drive React updates, then await the visible application result. Providers, endpoint payloads, browser polyfills and stream/reader completion remain consumer-owned.
+
+Teardown attempts caller unmount, query cancellation, unfinished promise outcomes and response cancellation, bounded promise/mutation settlement, caller `afterCancel`, cache clearing, HTTP draining and exact restoration. Promises and mutations share an internal one-second settlement budget; diagnostics retain unresolved labels and mutation keys. Arbitrary cleanup callbacks must terminate themselves. A failed cleanup wrapper still triggers owned disposal. `suite.finish()` permits early idempotent cleanup.
+
+Opt into browser restoration with `browser: { documentAttributes: ["data-theme"] }`. The snapshot covers URL/history, fetch/scrollTo/clipboard descriptors, configured document attributes and local/session storage before `prepare` runs. Cleanup and restoration also run after partial preparation failure.
+
 ## Package development
 
 Use the exact Node version in `.nvmrc`; Corepack selects the pinned pnpm version.
@@ -97,8 +142,8 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm --config.verify-deps-before-run=error check
 ```
 
-`check` builds the engine, lints sources and runs tests, including an isolated packed consumer. It needs registry access for that consumer's dependencies. It does not install development dependencies, publish or deploy. Package acceptance does not replace an adopting project's own gate.
+`check` builds all exports, typechecks the TypeScript suites and runner configuration, lints sources and runs the Node and Vitest suites, including an isolated packed consumer. It needs registry access for that consumer's dependencies. It does not install development dependencies, publish or deploy. Package acceptance does not replace an adopting project's own gate.
 
 Rebuild committed `dist/` files after source edits. For manual artifact verification, run `npm pack --ignore-scripts` after building and install the tarball in an independent consumer. A tarball is verification input, not a permanent cross-repository dependency or registry-adoption evidence.
 
-CI uses the same gate. Pushing an unpublished manifest version to `main` can publish automatically; do not bump or push a release version without approval. See [release operations](docs/releasing.md).
+CI uses the same gate. Pushing an unpublished manifest version to `main` can publish automatically; follow the task's release authority and normal owner acceptance. See [release operations](docs/releasing.md).

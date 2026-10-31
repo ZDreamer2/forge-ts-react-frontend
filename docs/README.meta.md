@@ -5,6 +5,7 @@ Specification for editing [README.md](../README.md). Defines purpose, usage patt
 ## README.md goals and principles
 
 - Helps independent consumers configure the exports and understand what remains their installation's responsibility, without requiring a BiCo checkout or Forge workflow knowledge.
+- Keeps testing adoption close to ordinary scenario authoring: ownership and cleanup are automatic, while rendering, providers and application completion stay consumer-owned.
 - Serves package maintainers through supported build/check/artifact commands, not a transcript of checks or consumer migration history.
 - Distinguishes source capabilities from published availability so consumers do not attempt unsupported imports. Release procedures belong to the release guide; project adoption status and acceptance evidence belong to those projects.
 
@@ -15,7 +16,7 @@ Specification for editing [README.md](../README.md). Defines purpose, usage patt
 ## MUST read before editing README.md
 
 - [StartSimple methodology](AI_DOC_PLUGIN/Theory/StartSimple.md) - Keeps adoption instructions focused on supported capabilities and observed integration needs.
-- `package.json`, `src/structure.ts` and `tests/package.test.mjs` - Own public exports, inputs and installed-consumer evidence; prose cannot claim capabilities they do not implement.
+- `package.json`, `src/structure.ts`, `src/testing/index.ts`, `src/testing/http.ts` and `tests/package.test.mjs` - Own public exports, inputs and installed-consumer evidence; prose cannot claim capabilities they do not implement.
 
 ## README.md typical use context
 

@@ -98,7 +98,7 @@ for (const scenario of cases) {
 	});
 }
 
-test("release artifact validation accepts the public engine and presets and rejects changed contents", () => {
+test("release artifact validation accepts all public capabilities and rejects changed contents", () => {
 	const blocks = [...workflow.matchAll(/node --input-type=module <<'JS'\n([\s\S]*?)\n {10}JS/g)];
 	const validation = blocks
 		.map((match) => match[1].replace(/^ {10}/gm, ""))
@@ -120,10 +120,28 @@ test("release artifact validation accepts the public engine and presets and reje
 				"README.md",
 				"dist/structure.d.ts",
 				"dist/structure.js",
+				"dist/testing/http.d.ts",
+				"dist/testing/http.js",
+				"dist/testing/index.d.ts",
+				"dist/testing/index.js",
+				"dist/testing/internal/lifecycle-owner.d.ts",
+				"dist/testing/internal/lifecycle-owner.js",
+				"dist/testing/internal/owned-deferred.d.ts",
+				"dist/testing/internal/owned-deferred.js",
+				"dist/testing/internal/owned-query-clients.d.ts",
+				"dist/testing/internal/owned-query-clients.js",
+				"dist/testing/internal/types.d.ts",
+				"dist/testing/internal/types.js",
 				"package.json",
 				"presets/biome-preset.json",
 				"presets/tsconfig.json",
 				"src/structure.ts",
+				"src/testing/http.ts",
+				"src/testing/index.ts",
+				"src/testing/internal/lifecycle-owner.ts",
+				"src/testing/internal/owned-deferred.ts",
+				"src/testing/internal/owned-query-clients.ts",
+				"src/testing/internal/types.ts",
 			].map((path) => ({ path })),
 			integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
 		};

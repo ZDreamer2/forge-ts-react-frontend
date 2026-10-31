@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { verifyTestingConsumer } from "./testing-package.test.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
@@ -19,8 +20,19 @@ const publicFiles = [
 	"presets/tsconfig.json",
 	"src/structure.ts",
 ];
+for (const path of [
+	"http",
+	"index",
+	"internal/lifecycle-owner",
+	"internal/types",
+	"internal/owned-deferred",
+	"internal/owned-query-clients",
+]) {
+	publicFiles.push(`src/testing/${path}.ts`, `dist/testing/${path}.js`, `dist/testing/${path}.d.ts`);
+}
+publicFiles.sort();
 
-test("packed presets and structural enforcement work in an independent consumer", { timeout: 240_000 }, async (t) => {
+test("packed exports work in an independent consumer", { timeout: 420_000 }, async (t) => {
 	const directory = mkdtempSync(join(tmpdir(), "forge-frontend-package-"));
 	const consumer = join(directory, "consumer");
 	const env = { ...process.env };
@@ -90,9 +102,16 @@ test("packed presets and structural enforcement work in an independent consumer"
 			"./biome": "./presets/biome-preset.json",
 			"./tsconfig": "./presets/tsconfig.json",
 			"./structure": { types: "./dist/structure.d.ts", default: "./dist/structure.js" },
+			"./testing": { types: "./dist/testing/index.d.ts", default: "./dist/testing/index.js" },
+			"./testing/http": { types: "./dist/testing/http.d.ts", default: "./dist/testing/http.js" },
 		});
-		assert.deepEqual(installed.peerDependencies, { "@biomejs/biome": "2.5.4", typescript: "7.0.2" });
-		assert.equal(installed.dependencies, undefined);
+		assert.equal(installed.peerDependencies["@biomejs/biome"], "2.5.4");
+		assert.equal(installed.peerDependencies.typescript, "7.0.2");
+		for (const peer of ["vitest", "@tanstack/query-core"]) {
+			assert.equal(installed.peerDependenciesMeta[peer].optional, true);
+			assert.throws(() => readFileSync(join(consumer, "node_modules", peer, "package.json")), /ENOENT/);
+		}
+		assert.deepEqual(installed.dependencies, { msw: "2.15.0" });
 		assert.equal(installed.scripts.prepublishOnly, undefined);
 		assert.equal(tool("tsc", ["--version"]).stdout.trim(), "Version 7.0.2");
 		assert.equal(tool("biome", ["--version"]).stdout.trim(), "Version: 2.5.4");
@@ -249,6 +268,7 @@ void severity;
 			tool("tsc", ["--noEmit"]);
 			rmSync(join(consumer, "browser/Bad.ts"));
 		});
+		await verifyTestingConsumer({ t, consumer, put, run, tool });
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}

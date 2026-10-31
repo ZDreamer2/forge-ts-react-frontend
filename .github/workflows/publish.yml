@@ -130,7 +130,7 @@ jobs:
           assert.equal(packed.name, '@zdreamer/forge-ts-react-frontend');
           assert.equal(packed.version, process.env.EXPECTED_VERSION);
           assert.equal(packed.filename, `zdreamer-forge-ts-react-frontend-${packed.version}.tgz`);
-          assert.deepEqual(packed.files.map(file => file.path).sort(), ['LICENSE', 'README.md', 'dist/structure.d.ts', 'dist/structure.js', 'package.json', 'presets/biome-preset.json', 'presets/tsconfig.json', 'src/structure.ts']);
+          assert.deepEqual(packed.files.map(file => file.path).sort(), ['LICENSE', 'README.md', 'dist/structure.d.ts', 'dist/structure.js', 'dist/testing/http.d.ts', 'dist/testing/http.js', 'dist/testing/index.d.ts', 'dist/testing/index.js', 'dist/testing/internal/lifecycle-owner.d.ts', 'dist/testing/internal/lifecycle-owner.js', 'dist/testing/internal/owned-deferred.d.ts', 'dist/testing/internal/owned-deferred.js', 'dist/testing/internal/owned-query-clients.d.ts', 'dist/testing/internal/owned-query-clients.js', 'dist/testing/internal/types.d.ts', 'dist/testing/internal/types.js', 'package.json', 'presets/biome-preset.json', 'presets/tsconfig.json', 'src/structure.ts', 'src/testing/http.ts', 'src/testing/index.ts', 'src/testing/internal/lifecycle-owner.ts', 'src/testing/internal/owned-deferred.ts', 'src/testing/internal/owned-query-clients.ts', 'src/testing/internal/types.ts']);
           assert.deepEqual(readdirSync(directory).filter(name => name.endsWith('.tgz')), [packed.filename]);
           const integrity = 'sha512-' + createHash('sha512').update(readFileSync(join(directory, packed.filename))).digest('base64');
           assert.equal(integrity, packed.integrity);

@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.build.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"declaration": false,
+		"rootDir": ".",
+		"jsx": "react-jsx"
+	},
+	"include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+}
